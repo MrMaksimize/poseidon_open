@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>poseidon.operators.s3_file_transfer_operator &#8212;  0.01 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.01',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for poseidon.operators.s3_file_transfer_operator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">airflow.exceptions</span> <span class="k">import</span> <span class="n">AirflowException</span>
+<span class="c1">#from airflow.hooks.S3_hook import S3Hook</span>
+<span class="kn">from</span> <span class="nn">poseidon.hooks.SDS3_hook</span> <span class="k">import</span> <span class="n">SDS3Hook</span>
+<span class="kn">from</span> <span class="nn">airflow.models</span> <span class="k">import</span> <span class="n">BaseOperator</span>
+<span class="kn">from</span> <span class="nn">airflow.utils.decorators</span> <span class="k">import</span> <span class="n">apply_defaults</span>
+
+
+<span class="k">class</span> <span class="nc">S3FileTransferOperator</span><span class="p">(</span><span class="n">BaseOperator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Copies data from a source local location to S3.</span>
+<span class="sd">    :param source_base_path: base path for local file</span>
+<span class="sd">    :type source_base_path: str</span>
+<span class="sd">    :param source_key: location of local file</span>
+<span class="sd">    :type source_key: str</span>
+<span class="sd">    param dest_s3_bucket: s3 bucket</span>
+<span class="sd">    :type dest_s3_bucket: str</span>
+<span class="sd">    :param dest_s3_conn_id: destination s3 connection</span>
+<span class="sd">    :type dest_s3_conn_id: str</span>
+<span class="sd">    :param dest_s3_key: The key to be written from S3</span>
+<span class="sd">    :type dest_s3_key: str</span>
+<span class="sd">    :param replace: Replace dest S3 key if it already exists</span>
+<span class="sd">    :type replace: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ui_color</span> <span class="o">=</span> <span class="s1">&#39;#f9c915&#39;</span>
+
+    <span class="nd">@apply_defaults</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">source_base_path</span><span class="p">,</span>
+            <span class="n">source_key</span><span class="p">,</span>
+            <span class="n">dest_s3_bucket</span><span class="p">,</span>
+            <span class="n">dest_s3_conn_id</span><span class="o">=</span><span class="s1">&#39;s3_default&#39;</span><span class="p">,</span>
+            <span class="n">dest_s3_key</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3FileTransferOperator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_base_path</span> <span class="o">=</span> <span class="n">source_base_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_conn_id</span> <span class="o">=</span> <span class="n">dest_s3_conn_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_bucket</span> <span class="o">=</span> <span class="n">dest_s3_bucket</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span> <span class="o">=</span> <span class="n">replace</span>
+
+        <span class="c1"># Default to same path on aws if no path passed.</span>
+        <span class="k">if</span> <span class="n">dest_s3_key</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_s3_key</span> <span class="o">=</span> <span class="n">source_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_key</span> <span class="o">=</span> <span class="n">dest_s3_key</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="n">dest_s3</span> <span class="o">=</span> <span class="n">SDS3Hook</span><span class="p">(</span><span class="n">s3_conn_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_conn_id</span><span class="p">)</span>
+        <span class="n">local_fpath</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_base_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> &gt;&gt;&gt;&gt;&gt; </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">local_fpath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_key</span><span class="p">))</span>
+        <span class="n">dest_s3</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">local_fpath</span><span class="p">,</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_key</span><span class="p">,</span>
+            <span class="n">bucket_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest_s3_bucket</span><span class="p">,</span>
+            <span class="n">replace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Upload successful&quot;</span><span class="p">)</span>
+        <span class="n">dest_s3</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Andrell, Arnaud, Maksim.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
