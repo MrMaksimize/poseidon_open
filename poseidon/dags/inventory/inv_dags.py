@@ -44,6 +44,3 @@ upload_inventory = S3FileTransferOperator(
 #: Execution Rules
 #: Inventory csv gets created before its uploaded
 upload_inventory.set_upstream(inventory_to_csv)
-
-#: upload_gid_requests must succeed before updating github
-update_inventory_md.set_upstream(upload_inventory)
