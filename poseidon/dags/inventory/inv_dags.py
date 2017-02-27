@@ -1,7 +1,6 @@
 """inventory_dags file."""
 from airflow.operators.python_operator import PythonOperator
 from poseidon.operators.s3_file_transfer_operator import S3FileTransferOperator
-from poseidon.util.seaboard_updates import update_seaboard_date, get_seaboard_update_dag
 from airflow.models import DAG
 from poseidon.util import general
 from poseidon.util.notifications import notify
@@ -40,10 +39,6 @@ upload_inventory = S3FileTransferOperator(
     replace=True,
     dag=dag)
 
-
-
-#: Update portal modified date
-update_inventory_md = get_seaboard_update_dag('data-inventory.md', dag)
 
 
 #: Execution Rules
